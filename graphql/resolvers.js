@@ -118,7 +118,15 @@ module.exports = {
                 throw new UserInputError("Bad Input",err)
             }
 
+        },
+
+        check: async(parent,args,context,info) => {
+            console.log(args.name);
+            return {
+                name: args.name
+            };
         }
+
     }
 
 }

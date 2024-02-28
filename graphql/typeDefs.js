@@ -30,8 +30,13 @@ module.exports = gql`
     password: String!
   }
 
+  type CheckResponse {
+  name: String!
+  }
+
   type Mutation{
     register(input: CreateUserInput): User!
+    check(name: String!): CheckResponse!
   }
 
   
