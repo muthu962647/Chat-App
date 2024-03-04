@@ -1,7 +1,9 @@
 import React from 'react'
 import { useState } from 'react'
 import { gql, useMutation } from '@apollo/client';
+import { useNavigate } from 'react-router-dom';
 import './Register.css'
+import {Link} from 'react-router-dom';
 
 function Register() {
 
@@ -13,6 +15,8 @@ function Register() {
     confirmPassword: ''
 
   });
+
+  const navigate = useNavigate();
 
   const [errors, setErrors] = useState({})
 
@@ -57,16 +61,10 @@ function Register() {
           input: variables
         }
       });
-
-
-
-      console.log(data);
+      navigate('/login');
     } catch (error) {
       console.error(error);
     }
-
-   
-
   }
 
   return (
@@ -74,6 +72,7 @@ function Register() {
     <div className="form-container">
 
       <form>
+        <h1>Register Page</h1>
         <label htmlFor="name"><b>Name</b></label>
         <input type="text" name="username" onChange={ChangeHandler} placeholder='Enter your Name Here' required/>
         <label htmlFor="email" ><b>Email</b></label>
@@ -84,6 +83,7 @@ function Register() {
         <input type="text" name="confirmPassword" onChange={ChangeHandler} placeholder='Confirm Password' required/>
 
         {loading? 'loading ...' : <button type='submit' className = "registerbtn" onClick={SubmitHandler}>Register</button>} 
+        <small>Already have an account? <Link to ='/login'> Login</Link> here</small>
       </form>
       </div>
     </>

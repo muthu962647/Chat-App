@@ -5,7 +5,7 @@ const { jwtDecode } = require('jwt-decode');
 const { UserInputError, AuthenticationError } = require('apollo-server')
 
 const typeDefs = require('./graphql/typeDefs')
-const resolvers = require('./graphql/resolvers')
+const resolvers = require('./graphql/resolvers/index')
 const { sequelize } =require('./models')
 
 
@@ -17,7 +17,8 @@ const server = new ApolloServer({
     try {
 
       if (!context.req.headers.authorization) {
-        return;
+        return
+        throw new Error('Unauthenticated');
       }
 
       const token = context.req.headers.authorization.split('Bearer ')[1];
@@ -33,9 +34,6 @@ const server = new ApolloServer({
       throw new AuthenticationError("Bad Token", err);
 
     }
-
-    
-    return decoded;
 
   }
 });

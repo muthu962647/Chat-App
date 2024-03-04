@@ -1,26 +1,47 @@
-const { gql } = require('apollo-server');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const { JWT_SECRET } = require('../config/env.json');
-const { User, Message } = require('../models');
-const { UserInputError, AuthenticationError } = require('apollo-server')
-
-
+const { JWT_SECRET } = require('../../config/env.json');
+const { User, Message } = require('../../models');
+const { UserInputError, AuthenticationError } = require('apollo-server');
+const user = require('../../models/user');
 
 module.exports = {
-
     Query: {
-    
-        getUsers: async(_,args,context)=> {
+
+        getUsers: async(_,args,{ username })=> {
 
             try{
 
-                if(!context.username){ throw new AuthenticationError('Please Login')}
+                if(!username){ throw new AuthenticationError('Please Login')}
 
-                const users = await User.findAll({
-                        where: {username:{[Op.ne]: context.username }}
+                let users = await User.findAll({
+                        attributes: ['username', 'imageUrl', 'createdAt'],
+                        where: {username:{[Op.ne]: username }}
                     });
+
+
+                    const allUserMessages = await Message.findAll({
+                        where: {
+                          [Op.or]: [{ from: username }, { to: username }],
+                        },
+                        order: [['createdAt', 'DESC']],
+                      });
+
+                console.log(allUserMessages);
+
+
+                users = users.map(otherUser => {
+                    const latestMessage = allUserMessages.find((m) =>{
+                        console.log("indivual value look like", m);
+                        return  m.dataValues.from === otherUser.username || m.dataValues.to === otherUser.username
+                    })
+
+                    otherUser.latestMessage = latestMessage
+                    return otherUser;
+                })
+
+               
 
                 return users;
                 
@@ -31,8 +52,6 @@ module.exports = {
         },
 
         login: async (_,args) =>{
-
-            console.log("Inside ra mapla");
 
                 const {username, password} = args.input;
 
@@ -78,9 +97,8 @@ module.exports = {
         }
     },
 
-    
-
     Mutation: {
+
         register: async (parent,args,context,info) => {
 
             const { username, email, password, confirmPassword} = args.input;
@@ -120,50 +138,8 @@ module.exports = {
                 throw new UserInputError("Bad Input",err)
             }
 
-        },
-
-        check: async(parent,args,context,info) => {
-            console.log(args.name);
-            return {
-                name: args.name
-            };
-        },
-
-        sendMessage: async (parent,args,{ username },info) => {
-
-
-            try{
-                const { to, content } = args;
-
-                console.log(username, to, content);
-
-                if(!username){ throw new AuthenticationError('Please Login')}
-
-                const recepient = await User.findOne({where: { username:to }})
-
-                if(!recepient){
-                    throw new AuthenticationError('Receipent User not Found');
-                }else if(username === recepient.username){
-                    throw new UserInputError('You cant message to Yourself');
-                }
-
-                if(content.trim() == ''){ throw new UserInputError('Message is Empty')};
-
-                const message = await Message.create({
-                    from: username,
-                    to,
-                    content
-                });
-
-                return message;
-
-            }catch(err){
-                throw err
-            }
-
-            
         }
 
-    }
 
+    }
 }
